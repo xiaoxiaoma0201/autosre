@@ -1,0 +1,63 @@
+# 故障复盘报告
+
+## 📋 基本信息
+
+| 项目 | 内容 |
+|------|------|
+| **故障 ID** | {{ incident_id }} |
+| **报告时间** | {{ report_time }} |
+| **严重程度** | {{ severity }} |
+| **影响服务** | {{ affected_services | join(', ') }} |
+| **影响实例** | {{ affected_instances | join(', ') }} |
+| **告警数量** | {{ alert_count }} |
+| **持续时间** | {{ duration }} |
+
+## 📅 故障时间线
+
+| 时间 | 事件 | 类型 |
+|------|------|------|
+{% for event in timeline %}
+| {{ event.time }} | {{ event.event }} | {{ event.type }} |
+{% endfor %}
+
+## 🔍 根因分析
+
+**根因**: {{ root_cause }}
+
+**置信度**: {{ "%.2f" | format(confidence * 100) }}%
+
+**证据**:
+{% for evidence_item in evidence %}
+- {{ evidence_item }}
+{% endfor %}
+
+## 📊 关键指标
+
+| 指标 | 当前值 | 阈值 | 状态 |
+|------|--------|------|------|
+{% for metric in key_metrics %}
+| {{ metric.name }} | {{ metric.current_value }} {{ metric.unit }} | {{ metric.threshold }} {{ metric.unit }} | {% if metric.exceeded %}⚠️ 异常{% else %}✅ 正常{% endif %} |
+{% endfor %}
+
+## 🔧 修复操作
+
+- **动作**: {{ repair_action }}
+- **结果**: {% if repair_success %}✅ 成功{% else %}❌ 失败/未执行{% endif %}
+
+## 💡 预防建议
+
+{{ prevention }}
+
+## 📝 总结
+
+本次故障严重程度为 **{{ severity }}**，影响了 {{ affected_services | length }} 个服务。
+根因分析置信度为 **{{ "%.2f" | format(confidence * 100) }}%**。
+
+### 改进措施
+1. 根据预防建议进行系统优化
+2. 加强监控和告警策略
+3. 定期进行故障演练
+4. 持续更新知识库
+
+---
+*报告由 AutoSRE 自动生成*

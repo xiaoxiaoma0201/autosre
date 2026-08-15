@@ -1,0 +1,45 @@
+{
+  "version": "1.0",
+  "actions": {
+    "restart_service": {
+      "description": "重启服务",
+      "risk_level": "medium",
+      "requires_confirmation": true,
+      "max_retries": 3,
+      "timeout_seconds": 60,
+      "rollback_available": true
+    },
+    "clean_disk": {
+      "description": "清理磁盘空间",
+      "risk_level": "low",
+      "requires_confirmation": false,
+      "max_retries": 1,
+      "timeout_seconds": 300,
+      "rollback_available": false
+    },
+    "scale_up": {
+      "description": "服务扩容",
+      "risk_level": "medium",
+      "requires_confirmation": true,
+      "max_retries": 2,
+      "timeout_seconds": 120,
+      "rollback_available": true
+    },
+    "rollback": {
+      "description": "回滚版本",
+      "risk_level": "high",
+      "requires_confirmation": true,
+      "max_retries": 1,
+      "timeout_seconds": 180,
+      "rollback_available": true
+    },
+    "clear_connections": {
+      "description": "清理数据库连接",
+      "risk_level": "medium",
+      "requires_confirmation": true,
+      "max_retries": 2,
+      "timeout_seconds": 30,
+      "rollback_available": false
+    }
+  }
+}

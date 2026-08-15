@@ -1,0 +1,50 @@
+# Python
+__pycache__/
+*.py[cod]
+*.so
+*.egg-info/
+dist/
+build/
+.venv/
+venv/
+
+# 数据库
+*.db
+*.sqlite
+
+# 日志
+logs/
+*.log
+
+# 报告
+reports/
+
+# 配置（敏感信息）
+config/autosre_config.json
+.env
+
+# IDE
+.vscode/
+.idea/
+*.swp
+
+# 测试缓存
+.pytest_cache/
+.coverage
+htmlcov/
+
+# 临时脚本
+*_test.py
+test_*.py
+fix_*.py
+rewrite_*.py
+create_*.py
+update_*.py
+integrate_*.py
+check_*.py
+debug_*.py
+enhance_*.py
+final_*.py
+quick_test.py
+change_port.py
+verify_integration.py

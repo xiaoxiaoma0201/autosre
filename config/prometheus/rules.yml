@@ -1,0 +1,42 @@
+groups:
+  - name: service_alerts
+    rules:
+      # 服务宕机告警
+      - alert: ServiceDown
+        expr: up == 0
+        for: 30s
+        labels:
+          severity: critical
+        annotations:
+          summary: "服务 {{ $labels.instance }} 宕机"
+          description: "{{ $labels.job }} 服务已停止超过30秒"
+
+      # 主机CPU使用率告警
+      - alert: HighCPU
+        expr: 100 - (avg by (instance) (rate(node_cpu_seconds_total{mode="idle"}[2m])) * 100) > 80
+        for: 2m
+        labels:
+          severity: warning
+        annotations:
+          summary: "主机 {{ $labels.instance }} CPU使用率过高"
+          description: "CPU使用率超过80%持续2分钟"
+
+      # 接口错误率告警
+      - alert: HighErrorRate
+        expr: rate(http_requests_total{status=~"5.."}[1m]) / rate(http_requests_total[1m]) > 0.05
+        for: 1m
+        labels:
+          severity: warning
+        annotations:
+          summary: "接口错误率过高"
+          description: "5xx错误率超过5%持续1分钟"
+
+      # 接口响应时间告警
+      - alert: SlowResponse
+        expr: histogram_quantile(0.95, rate(http_request_duration_seconds_bucket[1m])) > 2
+        for: 1m
+        labels:
+          severity: warning
+        annotations:
+          summary: "接口响应缓慢"
+          description: "95分位响应时间超过2秒持续1分钟"

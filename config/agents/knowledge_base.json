@@ -1,0 +1,62 @@
+{
+  "version": "1.0",
+  "last_updated": "2024-01-01",
+  "cases": [
+    {
+      "id": "case_001",
+      "title": "内存溢出导致服务崩溃",
+      "root_cause": "内存不足/内存泄漏",
+      "features": {
+        "services": ["test-service"],
+        "severity": "critical",
+        "error_patterns": [
+          {"pattern": "out_of_memory"},
+          {"pattern": "service_unavailable"}
+        ],
+        "exceeded_metrics": ["memory_usage"],
+        "anomaly_score_min": 0.7
+      },
+      "repair_action": "restart_service",
+      "prevention": "1. 增加 JVM 内存限制\n2. 优化内存使用\n3. 添加内存监控告警",
+      "success_rate": 0.9,
+      "resolution_time_avg": "5分钟"
+    },
+    {
+      "id": "case_002",
+      "title": "磁盘空间不足",
+      "root_cause": "磁盘空间不足",
+      "features": {
+        "services": ["test-service"],
+        "severity": "warning",
+        "error_patterns": [
+          {"pattern": "disk_full"}
+        ],
+        "exceeded_metrics": ["disk_usage"],
+        "anomaly_score_min": 0.5
+      },
+      "repair_action": "clean_disk",
+      "prevention": "1. 定期清理日志文件\n2. 设置磁盘使用率告警\n3. 实施日志轮转策略",
+      "success_rate": 0.95,
+      "resolution_time_avg": "10分钟"
+    },
+    {
+      "id": "case_003",
+      "title": "数据库连接池耗尽",
+      "root_cause": "数据库连接问题",
+      "features": {
+        "services": ["test-service"],
+        "severity": "critical",
+        "error_patterns": [
+          {"pattern": "database_error"},
+          {"pattern": "connection_timeout"}
+        ],
+        "exceeded_metrics": ["db_connections"],
+        "anomaly_score_min": 0.6
+      },
+      "repair_action": "clear_connections",
+      "prevention": "1. 优化连接池配置\n2. 检查连接泄漏\n3. 添加连接池监控",
+      "success_rate": 0.85,
+      "resolution_time_avg": "3分钟"
+    }
+  ]
+}

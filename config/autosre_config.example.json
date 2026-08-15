@@ -1,0 +1,12 @@
+{
+  "alert_time_window": 300,
+  "similarity_threshold": 0.6,
+  "prometheus_url": "http://localhost:9090",
+  "auto_execute": false,
+  "db_path": "autosre.db",
+  "llm_enabled": false,
+  "llm_model": "deepseek-v4-flash",
+  "llm_base_url": "https://api.deepseek.com",
+  "dingtalk_webhook": "",
+  "notification_enabled": false
+}
