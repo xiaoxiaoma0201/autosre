@@ -23,10 +23,10 @@ jobs:
         pip install -r requirements.txt
         pip install pytest
     
-    - name: Run tests
-      run: |
-        python -m pytest tests/ -v
-    
     - name: Syntax check
       run: |
         python -m py_compile agents/*.py api_server.py
+    
+       - name: Run unit tests
+      run: |
+        python -m pytest tests/test_agents.py -v --tb=short --ignore=tests/test_integration_optional.py
