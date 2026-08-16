@@ -1,0 +1,19 @@
+version: '3.8'
+
+services:
+  autosre:
+    build: .
+    ports:
+      - "9999:9999"
+    environment:
+      - PROMETHEUS_URL=http://prometheus:9090
+    depends_on:
+      - prometheus
+    volumes:
+      - ./reports:/app/reports
+      - ./logs:/app/logs
+      - autosre-db:/app/data
+    restart: unless-stopped
+
+volumes:
+  autosre-db:
