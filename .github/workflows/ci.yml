@@ -9,24 +9,21 @@ on:
 jobs:
   test:
     runs-on: ubuntu-latest
-    
     steps:
-    - uses: actions/checkout@v3
-    
-    - name: Set up Python
-      uses: actions/setup-python@v4
-      with:
-        python-version: '3.11'
-    
-    - name: Install dependencies
-      run: |
-        pip install -r requirements.txt
-        pip install pytest
-    
-    - name: Syntax check
-      run: |
-        python -m py_compile agents/*.py api_server.py
-    
-       - name: Run unit tests
-      run: |
-        python -m pytest tests/test_agents.py -v --tb=short --ignore=tests/test_integration_optional.py
+      - uses: actions/checkout@v3
+      
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+      
+      - name: Install dependencies
+        run: |
+          pip install -r requirements.txt
+          pip install pytest
+      
+      - name: Syntax check
+        run: python -m py_compile agents/*.py api_server.py
+      
+      - name: Run unit tests
+        run: python -m pytest tests/test_agents.py -v --tb=short
