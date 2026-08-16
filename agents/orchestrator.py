@@ -13,6 +13,7 @@ from .root_cause import RootCauseAgent
 from .repair_executor import RepairExecutorAgent
 from .report_generator import ReportGeneratorAgent
 from .database import Database
+from .self_learning import SelfLearning
 from .notification import NotificationService
 
 
@@ -70,6 +71,8 @@ class AutoSREOrchestrator:
         except Exception as e:
             logger.warning(f"Notification init failed: {str(e)}")
         
+                # 初始化自学习
+        self.learning = SelfLearning()
         logger.info("AutoSRE Orchestrator initialized")
     
     def handle_incident(self, alerts: List[Dict[str, Any]]) -> Dict[str, Any]:
@@ -154,6 +157,13 @@ class AutoSREOrchestrator:
                 "summary": summary,
                 "results": all_results
             }
+            
+                        # 知识库自学习
+            try:
+                self.learning.learn_from_incident(final_result)
+                logger.info("已从本次故障中学习")
+            except Exception as e:
+                logger.warning(f"自学习失败: {str(e)}")
             
             # 发送钉钉通知
             if self.notification:
