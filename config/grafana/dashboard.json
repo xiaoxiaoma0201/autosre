@@ -1,0 +1,32 @@
+{
+  "title": "AutoSRE 监控面板",
+  "panels": [
+    {
+      "title": "故障总数",
+      "type": "stat",
+      "targets": [
+        {
+          "expr": "autosre_incidents_total"
+        }
+      ]
+    },
+    {
+      "title": "处理成功率",
+      "type": "gauge",
+      "targets": [
+        {
+          "expr": "autosre_success_rate"
+        }
+      ]
+    },
+    {
+      "title": "告警趋势",
+      "type": "graph",
+      "targets": [
+        {
+          "expr": "rate(autosre_alerts_total[1h])"
+        }
+      ]
+    }
+  ]
+}
