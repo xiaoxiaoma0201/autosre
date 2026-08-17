@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>AutoSRE 控制台</title>
+    <script src="https://cdn.jsdelivr.net/npm/echarts@5/dist/echarts.min.js"></script>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         :root {
@@ -120,17 +121,8 @@
         }
         .btn:hover { opacity: 0.9; }
         .btn-primary { background: var(--primary); color: white; }
-        .btn-refresh { margin-bottom: 20px; }
-        .loading {
-            text-align: center;
-            padding: 40px;
-            color: #718096;
-        }
-        .empty {
-            text-align: center;
-            padding: 40px;
-            color: #a0aec0;
-        }
+        .loading { text-align: center; padding: 40px; color: #718096; }
+        .empty { text-align: center; padding: 40px; color: #a0aec0; }
     </style>
 </head>
 <body>
@@ -148,7 +140,6 @@
             <button class="btn btn-primary" onclick="refreshAll()">🔄 刷新</button>
         </div>
         
-        <!-- 仪表盘 -->
         <div id="panel-dashboard">
             <div class="stats-grid">
                 <div class="stat-card">
@@ -170,12 +161,16 @@
             </div>
             
             <div class="panel">
-                <h2>最近的故障</h2>
+                <h2>📈 故障趋势</h2>
+                <div id="trendChart" style="height: 300px;"></div>
+            </div>
+            
+            <div class="panel">
+                <h2>📋 最近的故障</h2>
                 <div id="recent-incidents"></div>
             </div>
         </div>
         
-        <!-- 故障记录 -->
         <div id="panel-incidents" style="display:none;">
             <div class="panel">
                 <h2>全部故障记录</h2>
@@ -183,7 +178,6 @@
             </div>
         </div>
         
-        <!-- 实时指标 -->
         <div id="panel-metrics" style="display:none;">
             <div class="panel">
                 <h2>实时系统指标</h2>
@@ -191,7 +185,6 @@
             </div>
         </div>
         
-        <!-- 报告 -->
         <div id="panel-reports" style="display:none;">
             <div class="panel">
                 <h2>生成的报告</h2>
@@ -201,21 +194,29 @@
     </div>
     
     <script>
+        // 全局 API Key
+        const API_KEY = 'autosre-admin-2024';
+        
+        // 统一的 API 请求函数
+        async function apiFetch(url, options = {}) {
+            const headers = {
+                'X-API-Key': API_KEY,
+                ...(options.headers || {})
+            };
+            return fetch(url, { ...options, headers });
+        }
+        
         function showPanel(panel) {
-            // 隐藏所有面板
             ['dashboard', 'incidents', 'metrics', 'reports'].forEach(p => {
                 document.getElementById('panel-' + p).style.display = 'none';
             });
-            // 显示选中面板
             document.getElementById('panel-' + panel).style.display = 'block';
             
-            // 更新导航高亮
             document.querySelectorAll('.nav-item').forEach(item => {
                 item.classList.remove('active');
             });
             event.target.classList.add('active');
             
-            // 更新标题
             const titles = {
                 'dashboard': '仪表盘',
                 'incidents': '故障记录',
@@ -224,7 +225,6 @@
             };
             document.getElementById('panelTitle').textContent = titles[panel];
             
-            // 加载对应数据
             if (panel === 'dashboard') loadDashboard();
             if (panel === 'incidents') loadIncidents();
             if (panel === 'metrics') loadMetrics();
@@ -233,24 +233,62 @@
         
         async function loadDashboard() {
             try {
-                const statsRes = await fetch('/api/v1/stats');
+                const statsRes = await apiFetch('/api/v1/stats');
                 const stats = await statsRes.json();
                 document.getElementById('stat-incidents').textContent = stats.total_incidents || 0;
                 document.getElementById('stat-completed').textContent = stats.completed_incidents || 0;
                 document.getElementById('stat-alerts').textContent = stats.total_alerts || 0;
                 document.getElementById('stat-rate').textContent = ((stats.success_rate || 0) * 100).toFixed(1) + '%';
                 
-                const incidentsRes = await fetch('/api/v1/incidents/recent');
+                const incidentsRes = await apiFetch('/api/v1/incidents/recent');
                 const incidents = await incidentsRes.json();
                 renderIncidents(incidents, 'recent-incidents', true);
+                renderTrendChart(incidents);
             } catch (e) {
                 console.error('Failed:', e);
             }
         }
         
+        function renderTrendChart(incidents) {
+            const chartDom = document.getElementById('trendChart');
+            if (!chartDom || typeof echarts === 'undefined') return;
+            
+            const chart = echarts.init(chartDom);
+            const dateMap = {};
+            (incidents || []).forEach(inc => {
+                const date = (inc.timestamp || '').substring(0, 10);
+                dateMap[date] = (dateMap[date] || 0) + 1;
+            });
+            
+            const dates = Object.keys(dateMap).sort();
+            const counts = dates.map(d => dateMap[d]);
+            
+            chart.setOption({
+                tooltip: { trigger: 'axis' },
+                grid: { left: '5%', right: '5%', bottom: '10%', top: '10%' },
+                xAxis: {
+                    type: 'category',
+                    data: dates.length > 0 ? dates : ['暂无数据'],
+                    axisLabel: { fontSize: 12 }
+                },
+                yAxis: { type: 'value', minInterval: 1 },
+                series: [{
+                    name: '故障数',
+                    data: counts.length > 0 ? counts : [0],
+                    type: 'line',
+                    smooth: true,
+                    areaStyle: { opacity: 0.3 },
+                    itemStyle: { color: '#667eea' },
+                    lineStyle: { width: 3 }
+                }]
+            });
+            
+            window.addEventListener('resize', () => chart.resize());
+        }
+        
         async function loadIncidents() {
             try {
-                const res = await fetch('/api/v1/incidents/recent');
+                const res = await apiFetch('/api/v1/incidents/recent');
                 const incidents = await res.json();
                 renderIncidents(incidents, 'all-incidents', false);
             } catch (e) {
@@ -260,7 +298,7 @@
         
         async function loadMetrics() {
             try {
-                const res = await fetch('/api/v1/metrics');
+                const res = await apiFetch('/api/v1/metrics');
                 const data = await res.json();
                 const metrics = data.metrics || {};
                 
@@ -284,7 +322,7 @@
         
         async function loadReports() {
             try {
-                const res = await fetch('/api/v1/reports');
+                const res = await apiFetch('/api/v1/reports');
                 const data = await res.json();
                 const reports = data.reports || [];
                 
@@ -337,7 +375,6 @@
             }
         }
         
-        // 初始加载
         loadDashboard();
         setInterval(loadDashboard, 30000);
     </script>
