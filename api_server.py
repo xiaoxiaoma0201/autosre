@@ -95,7 +95,18 @@ async def login(username: str, password: str):
         token = auth_service.create_token(username, "admin")
         return {"token": token, "token_type": "bearer"}
     raise HTTPException(status_code=401, detail="Invalid credentials")
-
+@app.get("/metrics")
+async def metrics():
+    """暴露系统自身指标给 Prometheus"""
+    stats = database.get_incident_stats()
+    return {
+        "autosre_incidents_total": stats.get('total_incidents', 0),
+        "autosre_completed_incidents": stats.get('completed_incidents', 0),
+        "autosre_total_alerts": stats.get('total_alerts', 0),
+        "autosre_success_rate": stats.get('success_rate', 0),
+        "version": "1.1.0",
+        "timestamp": datetime.now().isoformat()
+    }
 @app.get("/health")
 async def health():
     """健康检查"""
