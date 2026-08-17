@@ -1,6 +1,7 @@
 """
 协调器 - 编排所有 Agent 完成完整的排障流程
 """
+from .predictive_agent import PredictiveAgent
 from typing import Dict, Any, List, Optional
 from datetime import datetime
 import uuid
@@ -23,7 +24,8 @@ class AutoSREOrchestrator:
     def __init__(self, config: Optional[Dict[str, Any]] = None):
         self.config = config or {}
         self.message_bus = MessageBus()
-        
+        self.predictive_agent = PredictiveAgent(message_bus=self.message_bus)
+
         self.alert_agent = AlertConvergenceAgent(
             message_bus=self.message_bus,
             time_window=self.config.get('alert_time_window', 300),

@@ -6,6 +6,7 @@ from datetime import datetime, timedelta
 import requests
 from .base_agent import BaseAgent
 from .message_bus import MessageType
+from .cache import metric_cache
 
 
 class MetricQuerierAgent(BaseAgent):
@@ -41,16 +42,6 @@ class MetricQuerierAgent(BaseAgent):
                 'query': 'node_load1',
                 'threshold': 4,
                 'unit': 'load'
-            },
-            'http_requests': {
-                'query': 'rate(http_requests_total[5m])',
-                'threshold': None,
-                'unit': 'req/s'
-            },
-            'http_errors': {
-                'query': 'rate(http_requests_total{status=~"5.."}[5m])',
-                'threshold': 1,
-                'unit': 'errors/s'
             }
         }
         
@@ -81,6 +72,12 @@ class MetricQuerierAgent(BaseAgent):
         metrics = {}
         
         for metric_name, metric_def in self.metric_definitions.items():
+            # 检查缓存
+            cached = metric_cache.get(metric_name)
+            if cached:
+                metrics[metric_name] = cached
+                continue
+            
             try:
                 metric_data = self._query_prometheus(metric_def['query'], time_range)
                 
@@ -101,6 +98,9 @@ class MetricQuerierAgent(BaseAgent):
                         'data_points': metric_data[-20:],
                         'status': 'success'
                     }
+                    
+                    # 存入缓存
+                    metric_cache.set(metric_name, metrics[metric_name])
                 else:
                     metrics[metric_name] = {
                         'name': metric_name,
@@ -119,9 +119,8 @@ class MetricQuerierAgent(BaseAgent):
         return metrics
     
     def _query_prometheus(self, query: str, time_range: tuple) -> List[tuple]:
-        """查询 Prometheus - 先尝试范围查询，失败后使用瞬时查询"""
+        """查询 Prometheus"""
         try:
-            # 先尝试范围查询
             response = requests.get(
                 f"{self.prometheus_url}/api/v1/query_range",
                 params={
@@ -142,7 +141,7 @@ class MetricQuerierAgent(BaseAgent):
                         if values:
                             return [(float(v[0]), float(v[1])) for v in values]
             
-            # 范围查询失败或返回空，尝试瞬时查询
+            # 尝试瞬时查询
             response = requests.get(
                 f"{self.prometheus_url}/api/v1/query",
                 params={'query': query},
@@ -156,16 +155,12 @@ class MetricQuerierAgent(BaseAgent):
                     if results:
                         value = results[0].get('value', [None, None])
                         if value[1]:
-                            # 生成一个数据点
                             import time
                             return [(time.time(), float(value[1]))]
             
             return []
-        except requests.exceptions.ConnectionError:
-            self.logger.warning(f"Cannot connect to Prometheus: {self.prometheus_url}")
-            return []
         except Exception as e:
-            self.logger.error(f"Prometheus query failed: {str(e)}")
+            self.logger.warning(f"Prometheus query failed: {str(e)}")
             return []
     
     def _check_threshold(self, value: Optional[float], threshold: Optional[float]) -> bool:
@@ -194,21 +189,6 @@ class MetricQuerierAgent(BaseAgent):
                     'severity': self._calculate_severity(current_value, threshold),
                     'timestamp': datetime.now().isoformat()
                 })
-            
-            values = [point[1] for point in metric_data.get('data_points', [])]
-            if len(values) > 5:
-                avg = sum(values[:-1]) / len(values[:-1]) if len(values[:-1]) > 0 else 0
-                if avg > 0 and current_value:
-                    change_percent = abs(current_value - avg) / avg
-                    if change_percent > 0.5:
-                        anomalies.append({
-                            'metric': metric_name,
-                            'type': 'sudden_change',
-                            'current_value': current_value,
-                            'avg_value': avg,
-                            'change_percent': change_percent,
-                            'timestamp': datetime.now().isoformat()
-                        })
         
         return anomalies
     
@@ -237,19 +217,3 @@ class MetricQuerierAgent(BaseAgent):
             end = datetime.now()
             
         return start.isoformat(), end.isoformat()
-    
-    def check_prometheus_health(self) -> Dict[str, Any]:
-        """检查 Prometheus 健康状态"""
-        try:
-            response = requests.get(f"{self.prometheus_url}/-/healthy", timeout=5)
-            return {
-                'healthy': response.status_code == 200,
-                'status_code': response.status_code,
-                'url': self.prometheus_url
-            }
-        except Exception as e:
-            return {
-                'healthy': False,
-                'error': str(e),
-                'url': self.prometheus_url
-            }
