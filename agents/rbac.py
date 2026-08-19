@@ -81,7 +81,8 @@ class RBAC:
             if info.get('api_key') == api_key:
                 return {
                     "username": username,
-                    "role": info.get('role')
+                    "role": info.get('role'),
+                    "api_key": api_key
                 }
         return None
     
